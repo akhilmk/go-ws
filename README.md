@@ -1,2 +1,2 @@
 # go-ws
-golang websocket 
+golang websocket implementation
