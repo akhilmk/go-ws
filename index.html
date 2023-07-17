@@ -45,6 +45,7 @@
         document.getElementById("btnUser").value= "start chat";
         document.getElementById("listMsg").innerHTML = ""
         toggleMsgDiv(true)
+        wsGlobal.close()
         STATUS_MAIN = STATUS_DISC
      }
    }
