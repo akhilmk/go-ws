@@ -28,46 +28,58 @@
         console.log("sendMsgButtonClick clicked..")  
         msg = document.getElementById('textAreaMsg').value   
         wsGlobal.send(msg)
-   }
+    }
 
    function startChatButtonClick() {
      if (STATUS_MAIN == STATUS_DISC){
+        document.getElementById("labelStatusMsg").innerText = "starting connection.."
         connectWs() // todo error handling
-        document.getElementById("userName").disabled = true;
-        document.getElementById("labelStatusMsg").innerText = STATUS_CONN
-        document.getElementById("btnUser").value= "stop chat";
-        document.getElementById("listMsg").innerHTML = ""
-        toggleMsgDiv(false)
-        STATUS_MAIN = STATUS_CONN
      }else{
-        document.getElementById("userName").disabled = false;
-        document.getElementById("labelStatusMsg").innerText = STATUS_DISC
-        document.getElementById("btnUser").value= "start chat";
-        document.getElementById("listMsg").innerHTML = ""
-        toggleMsgDiv(true)
+        document.getElementById("labelStatusMsg").innerText = "closing connection.."
         wsGlobal.close()
-        STATUS_MAIN = STATUS_DISC
      }
    }
+   function connected() {
+            console.log("onopen sw connected")
+            document.getElementById("userName").disabled = true;
+            document.getElementById("labelStatusMsg").innerText = STATUS_CONN
+            document.getElementById("btnUser").value= "stop chat";
+            document.getElementById("listMsg").innerHTML = ""
+            document.getElementById('textAreaMsg').value = ""
+            toggleMsgDiv(false)
+            STATUS_MAIN = STATUS_CONN
+   }
+   function disconnected() {
+            console.log("onclose ws closed ",event)
+            document.getElementById("userName").disabled = false;
+            document.getElementById("labelStatusMsg").innerText = "connection closed"
+            document.getElementById("btnUser").value= "start chat";
+            document.getElementById("listMsg").innerHTML = ""
+            document.getElementById('textAreaMsg').value = ""
+            STATUS_MAIN = STATUS_DISC
+            toggleMsgDiv(true)
+   }
+
 
    function connectWs() {
         let socket = new WebSocket("ws://localhost:8080/ws")
         console.log("starting ws connection")
-        
+
         socket.onopen = () =>{
-            console.log("onopen sw connected")
+            connected()
+        }
+        socket.onclose = (event) =>{
+            disconnected()
         }
         socket.onmessage =(msg)=>{
              console.log("onmessage msg:", msg.data)
              msgText= document.getElementById("listMsg").innerHTML
              document.getElementById("listMsg").innerHTML =msgText+'<li>' + msg.data + '</li>';
         }
-
-        socket.onclose = (event) =>{
-            console.log("onclose ws closed ",event)
-        }
         socket.onerror = (error) =>{
             console.log("onerror ws error ",error)
+            document.getElementById("labelStatusMsg").innerText = "connection error"
+            disconnected()
         }
         wsGlobal = socket
    }
