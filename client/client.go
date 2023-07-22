@@ -2,32 +2,34 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 
-	"github.com/google/uuid"
+	"github.com/akhilmk/go-ws/event"
+	"github.com/akhilmk/go-ws/util"
 	"github.com/gorilla/websocket"
 )
 
 type Broadcaster interface {
-	BroadCast(msg string)
+	BroadCast(event.Event)
 	RemoveClient(msg string)
 }
 
 type ClientWS interface {
-	SendMessage(msg string)
+	SendMessage(msg event.Event)
 }
 
 type client struct {
 	clientId    string
 	wsConn      *websocket.Conn
-	sendChan    chan string // todo make message Event struct based or []byte on requirement
+	sendChan    chan event.Event
 	ctx         context.Context
 	cancel      context.CancelFunc
 	broadCaster Broadcaster
 }
 
 func NewClient(ctxReq context.Context, conn *websocket.Conn, bc Broadcaster) (string, ClientWS) {
-	cId := uuid.NewString()
+	cId := util.GetUserNameFromContext(ctxReq)
 	ctx, cancel := context.WithCancel(ctxReq)
 
 	c := &client{
@@ -35,7 +37,7 @@ func NewClient(ctxReq context.Context, conn *websocket.Conn, bc Broadcaster) (st
 		wsConn:      conn,
 		ctx:         ctx,
 		cancel:      cancel,
-		sendChan:    make(chan string),
+		sendChan:    make(chan event.Event),
 		broadCaster: bc,
 	}
 
@@ -46,7 +48,7 @@ func NewClient(ctxReq context.Context, conn *websocket.Conn, bc Broadcaster) (st
 	return cId, c
 }
 
-func (c client) SendMessage(msg string) {
+func (c client) SendMessage(msg event.Event) {
 	// un-buffered channel helps to write one message to socket at a time.
 	c.sendChan <- msg
 }
@@ -71,8 +73,13 @@ func (c *client) socketReader() {
 			break
 		}
 
+		var eventMsg event.Event
+		if err := json.Unmarshal(p, &eventMsg); err != nil {
+			log.Printf("socketReader error marshalling event")
+		}
+
 		// if no errors, send message to broadcaster.
-		c.broadCaster.BroadCast(string(p))
+		c.broadCaster.BroadCast(eventMsg)
 	}
 
 }
@@ -99,7 +106,9 @@ func (c *client) socketWriter() {
 				return
 			}
 
-			err := c.wsConn.WriteMessage(websocket.TextMessage, []byte(msg))
+			eventMsg := event.Event{Type: event.EventSendMessage, Payload: msg.Payload}
+			b, _ := json.Marshal(eventMsg)
+			err := c.wsConn.WriteMessage(websocket.TextMessage, b)
 			if err != nil {
 				log.Printf("socketWriter error:%v", err)
 			}

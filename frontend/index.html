@@ -1,102 +1,122 @@
 <html>
+
 <head>
-<title>Title of the document</title>
+    <title>Title of the document</title>
 </head>
 
 <body>
-<h1>Message broadcaster</h1>
+    <h1>Message broadcaster</h1>
 </body>
 <script>
 
-   STATUS_CONN = "connected"
-   STATUS_DISC = "disconnected"
-   STATUS_MAIN = "disconnected"
-   var wsGlobal
+    STATUS_CONN = "connected"
+    STATUS_DISC = "disconnected"
+    STATUS_MAIN = "disconnected"
+    var wsGlobal
 
-   window.onload = function () {
-       toggleMsgDiv(true)
-   }
-
-   function toggleMsgDiv(st) {
-        var nodes = document.getElementById("sendMsgDiv").getElementsByTagName('*');
-        for(var i = 0; i < nodes.length; i++){
-           nodes[i].disabled = st;
+    // event data
+    class Event {
+        constructor(type, payload) {
+            this.type = type
+            this.payload = payload
         }
-   }
-
-    function sendMsgButtonClick() {
-        console.log("sendMsgButtonClick clicked..")  
-        msg = document.getElementById('textAreaMsg').value   
-        wsGlobal.send(msg)
     }
 
-   function startChatButtonClick() {
-     if (STATUS_MAIN == STATUS_DISC){
-        document.getElementById("labelStatusMsg").innerText = "starting connection.."
-        connectWs() // todo error handling
-     }else{
-        document.getElementById("labelStatusMsg").innerText = "closing connection.."
-        wsGlobal.close()
-     }
-   }
-   function connected() {
-            console.log("onopen sw connected")
-            document.getElementById("userName").disabled = true;
-            document.getElementById("labelStatusMsg").innerText = STATUS_CONN
-            document.getElementById("btnUser").value= "stop chat";
-            document.getElementById("listMsg").innerHTML = ""
-            document.getElementById('textAreaMsg').value = ""
-            toggleMsgDiv(false)
-            STATUS_MAIN = STATUS_CONN
-   }
-   function disconnected() {
-            console.log("onclose ws closed ",event)
-            document.getElementById("userName").disabled = false;
-            document.getElementById("labelStatusMsg").innerText = "connection closed"
-            document.getElementById("btnUser").value= "start chat";
-            document.getElementById("listMsg").innerHTML = ""
-            document.getElementById('textAreaMsg').value = ""
-            STATUS_MAIN = STATUS_DISC
-            toggleMsgDiv(true)
-   }
+    function sendEvent(eventName, payload) {
+        const event = new Event(eventName, payload)
+        wsGlobal.send(JSON.stringify(event))
+    }
+
+    window.onload = function () {
+        toggleMsgDiv(true)
+    }
+
+    function toggleMsgDiv(st) {
+        var nodes = document.getElementById("sendMsgDiv").getElementsByTagName('*');
+        for (var i = 0; i < nodes.length; i++) {
+            nodes[i].disabled = st;
+        }
+    }
+
+    function sendMsgButtonClick() {
+        console.log("sendMsgButtonClick clicked..")
+        msg = document.getElementById('textAreaMsg').value
+        //wsGlobal.send(msg)
+        sendEvent("message", msg)
+    }
+
+    function startChatButtonClick() {
+        if (STATUS_MAIN == STATUS_DISC) {
+            document.getElementById("labelStatusMsg").innerText = "starting connection.."
+            userName= document.getElementById('userName').value
+            connectWs(userName) 
+        } else {
+            document.getElementById("labelStatusMsg").innerText = "closing connection.."
+            wsGlobal.close()
+        }
+    }
+    function connected() {
+        console.log("onopen sw connected")
+        document.getElementById("userName").disabled = true;
+        document.getElementById("labelStatusMsg").innerText = STATUS_CONN
+        document.getElementById("btnUser").value = "stop chat";
+        document.getElementById("listMsg").innerHTML = ""
+        document.getElementById('textAreaMsg').value = ""
+        toggleMsgDiv(false)
+        STATUS_MAIN = STATUS_CONN
+    }
+    function disconnected() {
+        console.log("onclose ws closed ", event)
+        document.getElementById("userName").disabled = false;
+        document.getElementById("labelStatusMsg").innerText = "connection closed"
+        document.getElementById("btnUser").value = "start chat";
+        document.getElementById("listMsg").innerHTML = ""
+        document.getElementById('textAreaMsg').value = ""
+        STATUS_MAIN = STATUS_DISC
+        toggleMsgDiv(true)
+    }
 
 
-   function connectWs() {
-        let socket = new WebSocket("ws://localhost:8080/ws")
-        console.log("starting ws connection")
+    function connectWs(userName) {
+        let socket = new WebSocket("ws://localhost:8080/ws?user="+userName)
+        console.log("starting ws connection"+userName)
 
-        socket.onopen = () =>{
+        socket.onopen = () => {
             connected()
         }
-        socket.onclose = (event) =>{
+        socket.onclose = (event) => {
             disconnected()
         }
-        socket.onmessage =(msg)=>{
-             console.log("onmessage msg:", msg.data)
-             msgText= document.getElementById("listMsg").innerHTML
-             document.getElementById("listMsg").innerHTML =msgText+'<li>' + msg.data + '</li>';
+        socket.onmessage = (msg) => {
+            console.log("onmessage msg:", msg.data)
+            const evData = JSON.parse(msg.data)
+            const eeee = Object.assign(new Event, evData)
+
+            msgText = document.getElementById("listMsg").innerHTML
+            document.getElementById("listMsg").innerHTML = msgText + '<li>' + eeee.payload + '</li>';
         }
-        socket.onerror = (error) =>{
-            console.log("onerror ws error ",error)
+        socket.onerror = (error) => {
+            console.log("onerror ws error ", error)
             document.getElementById("labelStatusMsg").innerText = "connection error"
             disconnected()
         }
         wsGlobal = socket
-   }
- </script>
+    }
+</script>
 
- <div id="userNameDiv">
-    <label>user name</label><br/>
+<div id="userNameDiv">
+    <label>user name</label><br />
     <input type="text" id="userName">
-    <input type="button" id="btnUser" onclick="startChatButtonClick()" value="start chat"/>
-    <label id="labelStatusMsg">not connected<br/>
- </div>
- <div id="sendMsgDiv">
-    <br/>
-    <input type="text" id="textAreaMsg">
-    <input type="button" id="btnMsg" onclick="sendMsgButtonClick()" value="send message"/>
+    <input type="button" id="btnUser" onclick="startChatButtonClick()" value="start chat" />
+    <label id="labelStatusMsg">not connected<br />
 </div>
-    <div id="readMsgDiv">
-        <ul id = "listMsg"> </ul>
-    </div>
+<div id="sendMsgDiv">
+    <br />
+    <input type="text" id="textAreaMsg">
+    <input type="button" id="btnMsg" onclick="sendMsgButtonClick()" value="send message" />
+</div>
+<div id="readMsgDiv">
+    <ul id="listMsg"> </ul>
+</div>
+
 </html>

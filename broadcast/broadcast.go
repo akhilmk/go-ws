@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	"github.com/akhilmk/go-ws/client"
+	"github.com/akhilmk/go-ws/event"
 	"github.com/gorilla/websocket"
 )
 
@@ -14,7 +15,7 @@ type Broadcast struct {
 	clientsWs     map[string]client.ClientWS
 	lock          *sync.RWMutex
 	ctx           context.Context
-	broadcastChan chan string
+	broadcastChan chan event.Event
 }
 
 func NewBroadcaster(ctx context.Context) *Broadcast {
@@ -22,9 +23,9 @@ func NewBroadcaster(ctx context.Context) *Broadcast {
 		clientsWs:     make(map[string]client.ClientWS),
 		lock:          &sync.RWMutex{},
 		ctx:           ctx,
-		broadcastChan: make(chan string),
+		broadcastChan: make(chan event.Event),
 	}
-	go bc.listenClients()
+	go bc.listenAndBroadcast()
 	return bc
 }
 
@@ -34,11 +35,11 @@ func (bc *Broadcast) AddClient(ctxReq context.Context, conn *websocket.Conn) {
 
 	// keep all clients in Broadcast.
 	bc.lock.Lock()
-	bc.clientsWs[cId] = c
+	bc.clientsWs[cId] = c // todo handle duplicate user
 	bc.lock.Unlock()
 }
 
-func (bc Broadcast) BroadCast(msg string) {
+func (bc Broadcast) BroadCast(msg event.Event) {
 	bc.broadcastChan <- msg
 }
 
@@ -48,7 +49,7 @@ func (bc Broadcast) RemoveClient(clientId string) {
 	bc.lock.Unlock()
 }
 
-func (bc *Broadcast) listenClients() {
+func (bc *Broadcast) listenAndBroadcast() {
 	log.Printf("listenClients start")
 
 	for {
@@ -62,7 +63,11 @@ func (bc *Broadcast) listenClients() {
 				// todo configure number of routine, in a way to handle max number of clients per second.
 				for _, wsCl := range bc.clientsWs {
 					go func(wsClient client.ClientWS) {
-						wsClient.SendMessage(string(msg))
+
+						if msg.Type == event.EventSendMessage {
+							wsClient.SendMessage(msg)
+						}
+
 					}(wsCl)
 				}
 			}
