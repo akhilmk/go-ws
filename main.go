@@ -1,11 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
 
-	"github.com/akhilmk/go-ws/boradcaster"
+	bc "github.com/akhilmk/go-ws/broadcast"
 	"github.com/gorilla/websocket"
 )
 
@@ -13,16 +14,23 @@ var (
 	wsUpgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		CheckOrigin:     func(r *http.Request) bool { return true },
 	}
 
-	bCaster boradcaster.Boradcaster
+	bCaster *bc.Broadcast
 )
 
 func main() {
-	bCaster = boradcaster.NewBoradcaster()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	bCaster = bc.NewBroadcaster(ctx)
 	setupHandlers()
+
 	fmt.Println("server started :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+
 }
 
 func setupHandlers() {
@@ -35,12 +43,11 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func wsHomePage(w http.ResponseWriter, r *http.Request) {
-	wsUpgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	wsConn, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("error ws upgrade")
 		return
 	}
 	log.Println("ws new connection success..")
-	bCaster.AddClient(wsConn)
+	bCaster.AddClient(context.Background(), wsConn)
 }
