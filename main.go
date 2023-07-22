@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	bc "github.com/akhilmk/go-ws/broadcast"
+	"github.com/akhilmk/go-ws/util"
 	"github.com/gorilla/websocket"
 )
 
@@ -48,6 +49,10 @@ func wsHomePage(w http.ResponseWriter, r *http.Request) {
 		log.Println("error ws upgrade")
 		return
 	}
-	log.Println("ws new connection success..")
-	bCaster.AddClient(context.Background(), wsConn)
+
+	userName := r.URL.Query().Get("user") // todo add validation, duplicate user
+	ctx := util.GetCtxWithUserName(context.Background(), userName)
+	bCaster.AddClient(ctx, wsConn)
+
+	log.Println("ws new connection success.. user=" + userName)
 }

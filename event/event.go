@@ -2,6 +2,8 @@ package event
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 )
 
 type Event struct {
@@ -15,5 +17,9 @@ const (
 
 type MessageEvent struct {
 	Message string `json:"message"`
-	From    string `json:"from"`
+	User    string `json:"user"`
+}
+
+func (m MessageEvent) String() string {
+	return fmt.Sprintf("%s:%s", strings.TrimSpace(m.User), strings.TrimSpace(m.Message))
 }

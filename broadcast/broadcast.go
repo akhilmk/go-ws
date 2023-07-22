@@ -35,7 +35,7 @@ func (bc *Broadcast) AddClient(ctxReq context.Context, conn *websocket.Conn) {
 
 	// keep all clients in Broadcast.
 	bc.lock.Lock()
-	bc.clientsWs[cId] = c // todo handle duplicate user
+	bc.clientsWs[cId] = c
 	bc.lock.Unlock()
 }
 
@@ -64,10 +64,7 @@ func (bc *Broadcast) listenAndBroadcast() {
 				for _, wsCl := range bc.clientsWs {
 					go func(wsClient client.ClientWS) {
 
-						if msg.Type == event.EventSendMessage {
-							wsClient.SendMessage(msg)
-						}
-
+						wsClient.SendMessage(msg)
 					}(wsCl)
 				}
 			}

@@ -73,13 +73,13 @@ func (c *client) socketReader() {
 			break
 		}
 
-		var eventMsg event.Event
-		if err := json.Unmarshal(p, &eventMsg); err != nil {
+		var eventIn event.Event
+		if err := json.Unmarshal(p, &eventIn); err != nil {
 			log.Printf("socketReader error marshalling event")
 		}
 
 		// if no errors, send message to broadcaster.
-		c.broadCaster.BroadCast(eventMsg)
+		c.broadCaster.BroadCast(eventIn)
 	}
 
 }
