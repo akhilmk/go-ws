@@ -60,10 +60,10 @@ func (bc *Broadcast) listenClients() {
 			if ok {
 
 				// todo configure number of routine, in a way to handle max number of clients per second.
-				for _, wsC := range bc.clientsWs {
-					go func(wc client.ClientWS) {
-						wc.SendMessage(string(msg))
-					}(wsC)
+				for _, wsCl := range bc.clientsWs {
+					go func(wsClient client.ClientWS) {
+						wsClient.SendMessage(string(msg))
+					}(wsCl)
 				}
 			}
 		}

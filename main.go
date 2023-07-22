@@ -34,12 +34,12 @@ func main() {
 }
 
 func setupHandlers() {
-	http.HandleFunc("/", homePage)
+	http.Handle("/", homePage())
 	http.HandleFunc("/ws", wsHomePage)
 }
 
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "message broadcaster service started..")
+func homePage() http.Handler {
+	return http.FileServer(http.Dir("./frontend"))
 }
 
 func wsHomePage(w http.ResponseWriter, r *http.Request) {
