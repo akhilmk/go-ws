@@ -17,6 +17,7 @@ type Broadcaster interface {
 
 type ClientWS interface {
 	SendMessage(msg event.Event)
+	Close()
 }
 
 type client struct {
@@ -53,6 +54,11 @@ func (c client) SendMessage(msg event.Event) {
 	c.sendChan <- msg
 }
 
+func (c client) Close() {
+	c.cancel()
+	c.wsConn.Close()
+}
+
 func (c *client) socketReader() {
 
 	defer func() {
@@ -60,6 +66,8 @@ func (c *client) socketReader() {
 		c.broadCaster.RemoveClient(c.clientId)
 		c.cancel()
 	}()
+
+	c.wsConn.SetReadLimit(512) // handling jumbo frames.
 
 	for {
 		_, p, err := c.wsConn.ReadMessage()

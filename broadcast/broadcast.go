@@ -29,8 +29,25 @@ func NewBroadcaster(ctx context.Context) *Broadcast {
 	return bc
 }
 
-func (bc *Broadcast) AddClient(ctxReq context.Context, conn *websocket.Conn) {
+func (bc *Broadcast) ValidateUser(conn *websocket.Conn, user string) bool {
+	bc.lock.Lock()
+	_, exist := bc.clientsWs[user]
+	bc.lock.Unlock()
 
+	valid := true
+	if exist {
+		// close connection gracefully.
+		cm := websocket.FormatCloseMessage(websocket.CloseNormalClosure, "user-name-exist")
+		if err := conn.WriteMessage(websocket.CloseMessage, cm); err != nil {
+			log.Printf("ValidateUser WriteMessage error")
+		}
+		conn.Close()
+		valid = false
+	}
+	return valid
+}
+func (bc *Broadcast) AddClient(ctxReq context.Context, conn *websocket.Conn) {
+	// get new client
 	cId, c := client.NewClient(ctxReq, conn, bc)
 
 	// keep all clients in Broadcast.

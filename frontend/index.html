@@ -65,10 +65,9 @@
         toggleMsgDiv(false)
         STATUS_MAIN = STATUS_CONN
     }
-    function disconnected() {
-        console.log("onclose ws closed ", event)
+    function disconnected(reason) {
         document.getElementById("userName").disabled = false;
-        document.getElementById("labelStatusMsg").innerText = "connection closed"
+        document.getElementById("labelStatusMsg").innerText = "connection closed " + reason 
         document.getElementById("btnUser").value = "start chat";
         document.getElementById("listMsg").innerHTML = ""
         document.getElementById('textAreaMsg').value = ""
@@ -85,7 +84,8 @@
             connected()
         }
         socket.onclose = (event) => {
-            disconnected()
+            console.log("onclose ", event.reason)
+            disconnected(event.reason)
         }
         socket.onmessage = (msg) => {
             console.log("onmessage msg:", msg.data)

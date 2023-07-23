@@ -32,6 +32,8 @@ func main() {
 	fmt.Println("server started :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
+	// TODOs
+	// handle ping-pong
 }
 
 func setupHandlers() {
@@ -50,7 +52,14 @@ func wsHomePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userName := r.URL.Query().Get("user") // todo add validation, duplicate user
+	userName := r.URL.Query().Get("user")
+
+	valid := bCaster.ValidateUser(wsConn, userName)
+	if !valid {
+		log.Printf("ValidateUser user not valid")
+		return
+	}
+
 	ctx := util.GetCtxWithUserName(context.Background(), userName)
 	bCaster.AddClient(ctx, wsConn)
 
