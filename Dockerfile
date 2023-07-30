@@ -8,6 +8,7 @@ RUN go mod download
 
 COPY . ./
 
+# build image
 RUN CGO_ENABLED=0 GOOS=linux go build -o /ws-app
 
 # Deploy the application binary into a lean image
@@ -15,6 +16,7 @@ FROM gcr.io/distroless/base-debian11 AS build-release-stage
 
 WORKDIR /
 
+# copy binary and resources to new docker image.
 COPY --from=build-stage /ws-app /ws-app
 COPY --from=build-stage /app/frontend /frontend
 
