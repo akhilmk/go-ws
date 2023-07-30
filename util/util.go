@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"strings"
 )
 
 type CtxUserName string
@@ -25,8 +26,14 @@ func GetUserNameFromContext(ctx context.Context) string {
 }
 
 func CORSCheck(r *http.Request) bool {
-	switch r.Header.Get("Origin") {
-	case "http://localhost:" + GetPortEnv():
+	host := strings.Split(r.Host, ":")
+
+	if len(host) == 0 {
+		return false
+	}
+
+	switch host[0] {
+	case "localhost":
 		return true
 	default:
 		return false
