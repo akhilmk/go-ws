@@ -29,12 +29,11 @@ func main() {
 	bCaster = bc.NewBroadcaster(ctx)
 	setupHandlers()
 
-	fmt.Println("server started " + util.APP_PORT)
-	log.Fatal(http.ListenAndServe(util.APP_PORT, nil))
+	fmt.Println("server started " + util.GetPortEnv())
+	log.Fatal(http.ListenAndServe(":"+util.GetPortEnv(), nil))
 
 	// TODOs
 	// handle ping-pong
-	// dockerize
 }
 
 func setupHandlers() {

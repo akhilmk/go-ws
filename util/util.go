@@ -3,13 +3,13 @@ package util
 import (
 	"context"
 	"net/http"
+	"os"
 )
 
 type CtxUserName string
 
 const (
 	UserName = "userName"
-	APP_PORT = ":8080" // todo use ENV variable
 )
 
 func GetCtxWithUserName(ctx context.Context, userName string) context.Context {
@@ -26,9 +26,16 @@ func GetUserNameFromContext(ctx context.Context) string {
 
 func CORSCheck(r *http.Request) bool {
 	switch r.Header.Get("Origin") {
-	case "http://localhost" + APP_PORT:
+	case "http://localhost:" + GetPortEnv():
 		return true
 	default:
 		return false
 	}
+}
+func GetPortEnv() string {
+	port := os.Getenv("PORT")
+	if port == "" {
+		return "8080"
+	}
+	return port
 }
