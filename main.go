@@ -15,7 +15,7 @@ var (
 	wsUpgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
-		CheckOrigin:     func(r *http.Request) bool { return true },
+		CheckOrigin:     util.CORSCheck,
 	}
 
 	bCaster *bc.Broadcast
@@ -29,11 +29,12 @@ func main() {
 	bCaster = bc.NewBroadcaster(ctx)
 	setupHandlers()
 
-	fmt.Println("server started :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	fmt.Println("server started " + util.APP_PORT)
+	log.Fatal(http.ListenAndServe(util.APP_PORT, nil))
 
 	// TODOs
 	// handle ping-pong
+	// dockerize
 }
 
 func setupHandlers() {

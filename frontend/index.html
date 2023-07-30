@@ -77,7 +77,7 @@
 
 
     function connectWs(userName) {
-        let socket = new WebSocket("ws://localhost:8080/ws?user="+userName)
+        let socket = new WebSocket("ws://"+ document.location.host +"/ws?user="+userName)
         console.log("starting ws connection"+userName)
 
         socket.onopen = () => {
